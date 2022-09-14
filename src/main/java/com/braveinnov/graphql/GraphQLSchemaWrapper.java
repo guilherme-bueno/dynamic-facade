@@ -109,7 +109,7 @@ public class GraphQLSchemaWrapper {
                         System.out.println("....");
                     }
                     ComplexType typeName = getComplexTypeOf(item);
-                    System.out.println(item.getName() + " " + typeName.getType().getName() + " - " + TypeMap.loadType(typeName.getType().getName()).getType(dynamicTypes, ""));
+                    System.out.println(item.getName() + " " + typeName.getType().getName() + " - " + TypeMap.loadType(typeName.getType().getName()).getType(""));
                     FieldScaffold f = new FieldScaffold(item.getName(), TypeMap.loadType(typeName.getType().getName()), typeName.getType().getName());
                     fields.add(f);
                 } catch (Exception e) {
@@ -194,7 +194,7 @@ public class GraphQLSchemaWrapper {
     }
 
     public Class getDynamicType(String type) {
-        return TypeMap.loadType(type).getType(this.dynamicTypes, type).apply(this.dynamicTypes);
+        return TypeMap.loadType(type).getType(type).apply(this.dynamicTypes);
         // return this.dynamicTypes.get(type);
     }
 
