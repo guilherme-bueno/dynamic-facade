@@ -13,6 +13,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.braveinnov.controller.GraphQLSchemaController;
+import com.braveinnov.graphql.types.ComplexType;
+import com.braveinnov.graphql.types.loader.strategies.TypesLoaderGraphStrategy;
+import com.braveinnov.models.DynamicRestRouteDefinition;
 import com.google.gson.Gson;
 
 import graphql.ExecutionResult;
@@ -45,7 +49,7 @@ public class GraphQLSchemaWrapperTest {
 
         Map<String, Object>  data = result.getData();
         Map<String, Object> sc = (Map<String, Object>) data.get("data");
-        schema = new GraphQLSchemaWrapper(parser.createSchemaDefinition(sc));
+        schema = new GraphQLSchemaWrapper(parser.createSchemaDefinition(sc),  new TypesLoaderGraphStrategy());
     }
 
     @Test
@@ -58,9 +62,9 @@ public class GraphQLSchemaWrapperTest {
             System.out.println(field.getName() + " - " + field.getClass().getName());
             System.out.println("Definitions: " + field.getInputValueDefinitions());
             field.getInputValueDefinitions().forEach(input -> {
-                TypeName complexType = (TypeName) GraphQLSchemaWrapper.getComplexTypeOf(input);
+                ComplexType complexType = GraphQLSchemaWrapper.getComplexTypeOf(input);
                 System.out.println(input.getName() + " " + input.getType() + " " + complexType);
-                Class dynamicType = schema.getDynamicType(complexType.getName());
+                Class dynamicType = schema.getDynamicType(complexType.getType().getName());
                 System.out.println("dynamicType: " + dynamicType);
             });
         });
@@ -71,4 +75,12 @@ public class GraphQLSchemaWrapperTest {
         Class generatedType = schema.getGeneratedType("ItemInput");
         System.out.println("generatedType: " + generatedType);
     }
+
+    @Test
+    public void shouldParseGraphQLToDynamicRestRouteDefinition() {
+        List<DynamicRestRouteDefinition> definitions = new GraphQLSchemaController(schema).loadMutationsAsResourceDefinition();
+        System.out.println(definitions);
+    }
+
+    
 }

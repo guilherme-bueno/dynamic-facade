@@ -1,15 +1,25 @@
 package com.braveinnov.graphql;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class TypeScaffold {
 
     private final String name;
-    private final List<FieldScaffold> fields;
+    private List<FieldScaffold> fields;
+    private final List<String> dependencies = new ArrayList<>();
 
-    public TypeScaffold(String name, List<FieldScaffold> fields) {
+    public TypeScaffold(String name) {
         this.name = name;
+    }
+
+    public void setFields(List<FieldScaffold> fields) {
         this.fields = fields;
+        this.fields.forEach(field -> {
+            if (TypeMap.UNKNOW.equals(field.getType())) {
+                dependencies.add(field.getTypeName());
+            }
+        });
     }
 
     public String getName() {
@@ -18,5 +28,9 @@ public class TypeScaffold {
 
     public List<FieldScaffold> getFields() {
         return fields;
+    }
+
+    public List<String> getDependencies() {
+        return dependencies;
     }
 }

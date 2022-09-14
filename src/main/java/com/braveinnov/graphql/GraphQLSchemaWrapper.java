@@ -7,19 +7,20 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import com.braveinnov.controller.DynamicTypesHelper;
+import com.braveinnov.graphql.types.ComplexType;
+import com.braveinnov.graphql.types.loader.TypesLoader;
+
 import graphql.language.Definition;
 import graphql.language.Document;
+import graphql.language.FieldDefinition;
 import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
+import graphql.language.ListType;
 import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.Type;
 import graphql.language.TypeName;
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.dynamic.DynamicType.Builder;
-import net.bytebuddy.dynamic.DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition;
-import net.bytebuddy.implementation.FieldAccessor;
-import net.bytebuddy.description.modifier.Visibility;
 
 public class GraphQLSchemaWrapper {
 
@@ -32,14 +33,18 @@ public class GraphQLSchemaWrapper {
     private ObjectTypeDefinition mutation;
     
     private final Map<String, Class> dynamicTypes = new HashMap<>();
+    private TypesLoader loader;
+    private ObjectTypeDefinition query;
+    
 
 
     public Predicate<ObjectTypeDefinition> filterByName(String name){
-        return item -> item.getName().equalsIgnoreCase("Mutation");
+        return item -> item.getName().equalsIgnoreCase(name);
     }
 
-    public GraphQLSchemaWrapper(Document document) {
+    public GraphQLSchemaWrapper(Document document, TypesLoader loader) {
         this.document = document;
+        this.loader = loader;
         this.definitions = this.document.getDefinitions();
         objectTypeDefinitions = this.definitions.stream()
                                                 .filter(onlyObjectTypeDefinitionFilter)
@@ -57,50 +62,83 @@ public class GraphQLSchemaWrapper {
                         .findFirst()
                         .orElse(null);
 
+        query = objectTypeDefinitions
+                        .stream()
+                            .filter(filterByName("Query"))
+                            .findFirst()
+                            .orElse(null);
+
         generateDynamicTypes();
     }
 
     private void generateDynamicTypes() {
+
+        List<TypeScaffold> types = new ArrayList<>();
+        
         inputTypeDefinitions.forEach(type -> {
             final String name = type.getName();
             final List<FieldScaffold> fields = new ArrayList<>();
-            final TypeScaffold scaffold = new TypeScaffold(name, fields);
+            final TypeScaffold scaffold = new TypeScaffold(name);
+            types.add(scaffold);
 
             type.getInputValueDefinitions().forEach(item -> {
-                TypeName typeName = (TypeName) item.getType();
-                System.out.println(item.getName() + " " + typeName.getName() + " - " + TypeMap.valueOf(typeName.getName()).getType());
-                FieldScaffold f = new FieldScaffold(item.getName(), TypeMap.valueOf(typeName.getName()).getType());
-                fields.add(f);
-
-                ByteBuddy bb = new ByteBuddy();
-                Builder<Object> typeBuilder = 
-                    bb.subclass(Object.class)
-                        .name(scaffold.getName());
-
-                ReceiverTypeDefinition<Object> typeDefinitionReceiver = null;
-
-                for (FieldScaffold field : fields) {
-                    if (typeDefinitionReceiver != null) {
-                        typeDefinitionReceiver = typeDefinitionReceiver.defineField(field.getName(), field.getType(), Visibility.PRIVATE)
-                        .defineMethod("get"+field.getName(), field.getType(), Visibility.PUBLIC).intercept(FieldAccessor.ofBeanProperty())
-                        .defineMethod("set"+field.getName(), field.getType(), Visibility.PUBLIC).withParameter(String.class).intercept(FieldAccessor.ofBeanProperty());
-                    } else {
-                        typeDefinitionReceiver = typeBuilder.defineField(field.getName(), field.getType(), Visibility.PRIVATE)
-                        .defineMethod("get"+field.getName(), field.getType(), Visibility.PUBLIC).intercept(FieldAccessor.ofBeanProperty())
-                        .defineMethod("set"+field.getName(), field.getType(), Visibility.PUBLIC).withParameter(String.class).intercept(FieldAccessor.ofBeanProperty());
-                    }
+                try {   
+                    TypeName typeName = (TypeName) getComplexTypeOf(item.getType()).getType();
+                    System.out.println(item.getName() + " " + typeName.getName() + " - " + TypeMap.loadType(typeName.getName()));
+                    FieldScaffold f = new FieldScaffold(item.getName(), TypeMap.loadType(typeName.getName()), typeName.getName());
+                    fields.add(f);
+                } catch (Exception e) {
+                    System.out.println("Error to parse: " + item);
+                    throw e;
                 }
-
-                Class<? extends Object> generatedType = typeDefinitionReceiver.make().load(getClass().getClassLoader())
-                .getLoaded();
-
-                dynamicTypes.put(name, generatedType);
             });
+
+            scaffold.setFields(fields);
         });
+
+        objectTypeDefinitions.forEach(type -> {
+            final String name = type.getName();
+            final List<FieldScaffold> fields = new ArrayList<>();
+            final TypeScaffold scaffold = new TypeScaffold(name);
+
+            types.add(scaffold);
+
+            type.getFieldDefinitions().forEach(item -> {
+                try {
+                    if(item.getName().equalsIgnoreCase("name")) {
+                        System.out.println("....");
+                    }
+                    ComplexType typeName = getComplexTypeOf(item);
+                    System.out.println(item.getName() + " " + typeName.getType().getName() + " - " + TypeMap.loadType(typeName.getType().getName()).getType(dynamicTypes, ""));
+                    FieldScaffold f = new FieldScaffold(item.getName(), TypeMap.loadType(typeName.getType().getName()), typeName.getType().getName());
+                    fields.add(f);
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            });
+            scaffold.setFields(fields);
+        });
+
+        types.forEach(type -> {
+            System.out.println(" - " + type.getName() + " " + type.getDependencies());
+        });
+
+        this.loader.loadTypes(this.dynamicTypes, types);
+
+        loadDynamicTypesInJVM(types);
+        System.out.println(dynamicTypes.keySet());
+    }
+
+    private void loadDynamicTypesInJVM(List<TypeScaffold> types) {
+        DynamicTypesHelper.loadInJVM(types, this.dynamicTypes);
     }
 
     public Class getGeneratedType(String name){ 
         return dynamicTypes.get(name);
+    }
+
+    public ObjectTypeDefinition getQuery(){
+        return query;
     }
 
     public ObjectTypeDefinition getMutation(){
@@ -113,16 +151,54 @@ public class GraphQLSchemaWrapper {
         }).collect(Collectors.toList()).get(0);
     }
 
-    public static Type getComplexTypeOf(InputValueDefinition input){
+    public static ComplexType getComplexTypeOf(InputValueDefinition input){
         Type type = input.getType();
         if (type instanceof NonNullType) {
-            return ((NonNullType) type).getType();
+            return new ComplexType((TypeName)((NonNullType) type).getType());
+        } else if (type instanceof ListType) {
+            System.out.println("List Type: " + type);
+            return getComplexTypeOf(((ListType) type).getType());
         } else {
-            return type;
+            return new ComplexType((TypeName) type);
+        }
+    }
+
+    public static ComplexType getComplexTypeOf(FieldDefinition input){
+        Type type = input.getType();
+        if (type instanceof NonNullType) {
+            NonNullType nnType = (NonNullType) type;
+            ComplexType complexType = getComplexTypeOf(nnType.getType());
+            return new ComplexType(complexType.getType());
+        } else if (type instanceof ListType) {
+            ListType list = (ListType) type;
+            ComplexType cListType = getComplexTypeOf(list.getType());
+            return new ComplexType(cListType.getType(), true);
+        } else {
+            return new ComplexType((TypeName) type);
+        }
+    }
+
+    public static ComplexType getComplexTypeOf(Type input){
+        Type type = input;
+        if (type instanceof NonNullType) {
+            NonNullType nnType = (NonNullType) type;
+            ComplexType complexType = getComplexTypeOf(nnType.getType());
+            return new ComplexType(complexType.getType());
+        } else if (type instanceof ListType) {
+            ListType list = (ListType) type;
+            ComplexType cListType = getComplexTypeOf(list.getType());
+            return new ComplexType(cListType.getType(), true);
+        } else {
+            return new ComplexType((TypeName) type);
         }
     }
 
     public Class getDynamicType(String type) {
-        return this.dynamicTypes.get(type);
+        return TypeMap.loadType(type).getType(this.dynamicTypes, type).apply(this.dynamicTypes);
+        // return this.dynamicTypes.get(type);
+    }
+
+    public Map<String, Class> getDynamicTypes() {
+        return dynamicTypes;
     }
 }
