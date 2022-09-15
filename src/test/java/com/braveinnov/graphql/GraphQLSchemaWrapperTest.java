@@ -4,7 +4,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,15 +22,7 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.introspection.IntrospectionResultToSchema;
 import graphql.language.FieldDefinition;
-import graphql.language.InputObjectTypeDefinition;
 import graphql.language.ObjectTypeDefinition;
-import graphql.language.Type;
-import graphql.language.TypeName;
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.description.modifier.Visibility;
-import net.bytebuddy.dynamic.DynamicType.Builder;
-import net.bytebuddy.dynamic.DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition;
-import net.bytebuddy.implementation.FieldAccessor;
 
 public class GraphQLSchemaWrapperTest {
 
