@@ -10,6 +10,17 @@ public class TypeScaffoldNode {
     private final TypeScaffold value;
     private final List<TypeScaffoldNode> nodes = new ArrayList<>();
     private boolean visited;
+    private boolean lazy = false;
+
+    public static TypeScaffoldNode lazy(String name) {
+        TypeScaffoldNode scaffold = new TypeScaffoldNode(new TypeScaffold(name));
+        scaffold.lazy = true;
+        return scaffold;
+    }
+
+    public boolean isLazy() {
+      return lazy;
+    }
 
     public TypeScaffoldNode(TypeScaffold value) {
         this.value = value;
@@ -34,5 +45,4 @@ public class TypeScaffoldNode {
     public boolean isVisited() {
         return visited;
     }
-
 }

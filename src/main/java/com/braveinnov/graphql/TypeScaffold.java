@@ -6,7 +6,7 @@ import java.util.List;
 public class TypeScaffold {
 
     private final String name;
-    private List<FieldScaffold> fields;
+    private List<FieldScaffold> fields = new ArrayList<>();
     private final List<String> dependencies = new ArrayList<>();
 
     public TypeScaffold(String name) {
@@ -32,5 +32,10 @@ public class TypeScaffold {
 
     public List<String> getDependencies() {
         return dependencies;
+    }
+
+    @Override
+    public String toString() {
+        return "TypeScaffold [dependencies=" + dependencies + ", fields=" + fields + ", name=" + name + "]";
     }
 }

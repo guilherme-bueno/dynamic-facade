@@ -3,6 +3,7 @@ package com.braveinnov.graphql;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ public class GraphQLSchemaWrapperTest {
 
     @Before
     public void init() throws FileNotFoundException, IOException {
-        String schemaStr = IOUtils.toString(new FileInputStream("src/test/resources/schema.json"), Charset.defaultCharset());
+        String schemaStr = IOUtils.toString(new FileInputStream("src/test/resources/pistachio.json"), Charset.defaultCharset());
         
 
         IntrospectionResultToSchema parser = new IntrospectionResultToSchema();
@@ -63,8 +64,12 @@ public class GraphQLSchemaWrapperTest {
 
     @Test
     public void shouldGetTypeDefinition() {
-        Class generatedType = schema.getGeneratedType("ItemInput");
-        System.out.println("generatedType: " + generatedType);
+        Class generatedType = schema.getGeneratedType("AngleInputType");
+        
+        System.out.println("\n\ngeneratedType: " + generatedType);
+        for (Field field : generatedType.getDeclaredFields()) {
+            System.out.println(field.getName() + " " + field.getType());
+        }
     }
 
     @Test
