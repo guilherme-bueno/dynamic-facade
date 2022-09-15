@@ -1,9 +1,8 @@
-package com.braveinnov;
+package com.braveinnov.config;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.rest.RestBindingMode;
-import org.apache.camel.model.rest.RestParamType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,14 +15,17 @@ public class RestConfiguration extends RouteBuilder {
     @Override
     public void configure() throws Exception {
         restConfiguration()
-            .component("jetty")
+            .component("servlet")
+            .contextPath("ws")
             .host("localhost")
-            .port(8081)
-            .bindingMode(RestBindingMode.auto).jsonDataFormat("json-gson")
+            .enableCORS(true)
+            .bindingMode(RestBindingMode.auto)
+            .jsonDataFormat("json-gson")
             .dataFormatProperty("prettyPrint", "true")
             .apiContextPath("api-doc")
             .apiVendorExtension(true)
-                .apiProperty("api.title", "User API").apiProperty("api.version", "1.0.0")
+                .apiProperty("api.title", "User API")
+                .apiProperty("api.version", "1.0.0")
                 .apiProperty("cors", "true");
 
 
@@ -41,16 +43,16 @@ public class RestConfiguration extends RouteBuilder {
 
         // ctx.getClassResolver().addClassLoader(loader);
 
-        rest()
-            .get("/ping")
-                .produces("text/plain")
-                .consumes("text/plain")
-                .param()
-                    .name("test")
-                    .type(RestParamType.query)
-                    .description("test ...")
-                .endParam()
-            .to("direct:pong");
+        // rest()
+        //     .get("/ping")
+        //         .produces("text/plain")
+        //         .consumes("text/plain")
+        //         .param()
+        //             .name("test")
+        //             .type(RestParamType.query)
+        //             .description("test ...")
+        //         .endParam()
+        //     .to("direct:pong");
         //     .post("/user")
         //         .type(simpleTypeClass)
         //         .outType(User.class)
@@ -63,8 +65,8 @@ public class RestConfiguration extends RouteBuilder {
         //         System.out.println(response);
         //     });
 
-        from("direct:pong")
-            .transform().constant("Ping Pong!");
+        // from("direct:pong")
+        //     .transform().constant("Ping Pong!");
 
     }
 

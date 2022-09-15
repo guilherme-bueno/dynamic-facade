@@ -27,13 +27,31 @@ public class DynamicTypesHelper {
         for (FieldScaffold field : type.getFields()) {
             if (typeDefinitionReceiver != null) {
                 System.out.println("Field: " + field);
-                typeDefinitionReceiver = typeDefinitionReceiver.defineField(field.getName(), field.getType().getType(classes, field.getTypeName()).apply(classes), Visibility.PRIVATE)
-                .defineMethod("get"+toCamelCase(field.getName()), field.getType().getType(classes, field.getTypeName()).apply(classes), Visibility.PUBLIC).intercept(FieldAccessor.ofBeanProperty())
-                .defineMethod("set"+toCamelCase(field.getName()), field.getType().getType(classes, field.getTypeName()).apply(classes), Visibility.PUBLIC).withParameter(String.class).intercept(FieldAccessor.ofBeanProperty());
+                typeDefinitionReceiver = typeDefinitionReceiver.defineField(field.getName(), field.getType().getType(field.getTypeName()).apply(classes), Visibility.PRIVATE)
+                .defineMethod(
+                    "get"+toCamelCase(field.getName()), 
+                    field.getType().getType(
+                    field.getTypeName()).apply(classes), 
+                    Visibility.PUBLIC)
+                    .intercept(FieldAccessor.ofBeanProperty())
+                .defineMethod(
+                    "set"+toCamelCase(field.getName()), 
+                    field.getType().getType(
+                    field.getTypeName()).apply(classes), 
+                    Visibility.PUBLIC).withParameter(String.class)
+                    .intercept(FieldAccessor.ofBeanProperty());
             } else {
-                typeDefinitionReceiver = typeBuilder.defineField(field.getName(), field.getType().getType(classes, field.getTypeName()).apply(classes), Visibility.PRIVATE)
-                .defineMethod("get"+ toCamelCase(field.getName()), field.getType().getType(classes, field.getTypeName()).apply(classes), Visibility.PUBLIC).intercept(FieldAccessor.ofBeanProperty())
-                .defineMethod("set"+ toCamelCase(field.getName()), field.getType().getType(classes, field.getTypeName()).apply(classes), Visibility.PUBLIC).withParameter(String.class).intercept(FieldAccessor.ofBeanProperty());
+                typeDefinitionReceiver = typeBuilder.defineField(field.getName(), field.getType().getType(field.getTypeName()).apply(classes), Visibility.PRIVATE)
+                .defineMethod(
+                    "get"+ toCamelCase(field.getName()), 
+                    field.getType().getType(field.getTypeName()).apply(classes), 
+                    Visibility.PUBLIC)
+                    .intercept(FieldAccessor.ofBeanProperty())
+                .defineMethod(
+                    "set"+ toCamelCase(field.getName()), 
+                    field.getType().getType(field.getTypeName()).apply(classes), 
+                    Visibility.PUBLIC).withParameter(String.class)
+                    .intercept(FieldAccessor.ofBeanProperty());
             }
         }
 
