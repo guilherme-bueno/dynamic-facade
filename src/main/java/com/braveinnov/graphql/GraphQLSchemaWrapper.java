@@ -13,6 +13,7 @@ import com.braveinnov.graphql.types.loader.TypesLoader;
 
 import graphql.language.Definition;
 import graphql.language.Document;
+import graphql.language.EnumTypeDefinition;
 import graphql.language.FieldDefinition;
 import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
@@ -28,6 +29,7 @@ public class GraphQLSchemaWrapper {
     private final List<Definition> definitions;
     private final Predicate<Definition> onlyObjectTypeDefinitionFilter = (defO) ->  defO instanceof ObjectTypeDefinition;
     private final Predicate<Definition> onlyInputObjectTypeDefinitionFilter = (defO) ->  defO instanceof InputObjectTypeDefinition;
+    private final Predicate<Definition> onlyEnumTypeDefinitionFilter = (defO) ->  defO instanceof EnumTypeDefinition;
     private List<ObjectTypeDefinition> objectTypeDefinitions;
     private List<InputObjectTypeDefinition> inputTypeDefinitions;
     private ObjectTypeDefinition mutation;
@@ -35,9 +37,8 @@ public class GraphQLSchemaWrapper {
     private final Map<String, Class> dynamicTypes = new HashMap<>();
     private TypesLoader loader;
     private ObjectTypeDefinition query;
+    private List<EnumTypeDefinition> enumTypeDefinitions;
     
-
-
     public Predicate<ObjectTypeDefinition> filterByName(String name){
         return item -> item.getName().equalsIgnoreCase(name);
     }
@@ -54,6 +55,11 @@ public class GraphQLSchemaWrapper {
         inputTypeDefinitions = this.definitions.stream()
                                                 .filter(onlyInputObjectTypeDefinitionFilter)
                                                 .map(item -> (InputObjectTypeDefinition) item)
+                                                .collect(Collectors.toList());
+
+        enumTypeDefinitions = this.definitions.stream()
+                                                .filter(onlyEnumTypeDefinitionFilter)
+                                                .map(item -> (EnumTypeDefinition) item)
                                                 .collect(Collectors.toList());
 
         mutation = objectTypeDefinitions
@@ -83,10 +89,18 @@ public class GraphQLSchemaWrapper {
 
             type.getInputValueDefinitions().forEach(item -> {
                 try {   
-                    TypeName typeName = (TypeName) getComplexTypeOf(item.getType()).getType();
-                    System.out.println(item.getName() + " " + typeName.getName() + " - " + TypeMap.loadType(typeName.getName()));
-                    FieldScaffold f = new FieldScaffold(item.getName(), TypeMap.loadType(typeName.getName()), typeName.getName());
-                    fields.add(f);
+                    ComplexType typeName = getComplexTypeOf(item.getType());
+                    System.out.println(item.getName() + " " + typeName.getType().getName() + " - " + TypeMap.loadType(typeName.getType().getName()).getType(""));
+
+                    final String fieldName = typeName.getType().getName();
+                    if (fieldName.equalsIgnoreCase(type.getName())) {
+                        System.out.println("Self reference between: " + fieldName);
+                        FieldScaffold f = new FieldScaffold(item.getName(), TypeMap.TargetType, typeName.getType().getName());
+                        fields.add(f);
+                    } else {
+                        FieldScaffold f = new FieldScaffold(item.getName(), TypeMap.loadType(typeName.getType().getName()), typeName.getType().getName());
+                        fields.add(f);
+                    }
                 } catch (Exception e) {
                     System.out.println("Error to parse: " + item);
                     throw e;
@@ -110,8 +124,17 @@ public class GraphQLSchemaWrapper {
                     }
                     ComplexType typeName = getComplexTypeOf(item);
                     System.out.println(item.getName() + " " + typeName.getType().getName() + " - " + TypeMap.loadType(typeName.getType().getName()).getType(""));
-                    FieldScaffold f = new FieldScaffold(item.getName(), TypeMap.loadType(typeName.getType().getName()), typeName.getType().getName());
-                    fields.add(f);
+                    final String fieldName = typeName.getType().getName();
+
+                    if (fieldName.equalsIgnoreCase(type.getName())) {
+                        System.out.println("Self reference between: " + fieldName);
+                        FieldScaffold f = new FieldScaffold(item.getName(), TypeMap.TargetType, typeName.getType().getName());
+                        fields.add(f);
+                    } else {
+                        FieldScaffold f = new FieldScaffold(item.getName(), TypeMap.loadType(typeName.getType().getName()), typeName.getType().getName());
+                        fields.add(f);
+                    }
+
                 } catch (Exception e) {
                     System.out.println(e);
                 }
@@ -119,6 +142,13 @@ public class GraphQLSchemaWrapper {
             scaffold.setFields(fields);
         });
 
+        enumTypeDefinitions.forEach(type -> {
+            type.getName();
+            type.getEnumValueDefinitions().forEach(enumDef -> {
+                System.out.println(enumDef);
+            });
+        });
+        
         types.forEach(type -> {
             System.out.println(" - " + type.getName() + " " + type.getDependencies());
         });
@@ -195,7 +225,6 @@ public class GraphQLSchemaWrapper {
 
     public Class getDynamicType(String type) {
         return TypeMap.loadType(type).getType(type).apply(this.dynamicTypes);
-        // return this.dynamicTypes.get(type);
     }
 
     public Map<String, Class> getDynamicTypes() {

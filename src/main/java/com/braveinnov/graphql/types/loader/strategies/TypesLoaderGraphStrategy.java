@@ -16,9 +16,25 @@ public class TypesLoaderGraphStrategy implements TypesLoader {
         List<TypeScaffoldNode> nodes = types.stream().map(type -> new TypeScaffoldNode(type)).collect(Collectors.toList());
         Map<String, TypeScaffoldNode> map = nodes.stream().collect(Collectors.toMap((type) -> type.getValue().getName(), type -> type));
         nodes.forEach(node -> {
+            if (node.getValue().getName().equalsIgnoreCase("ClientSurveyInputType")) {
+                System.out.println("ClientSurveyInputType....");
+            }
             node.getValue().getDependencies().forEach(dependency -> {
-                TypeScaffoldNode dependencyNode = map.get(dependency);
-                if(dependencyNode != null) node.add(dependencyNode);
+                if (dependency.equalsIgnoreCase(node.getValue().getName())) {
+                    System.out.println("Self reference for: " + dependency);
+
+                } else {
+                    TypeScaffoldNode dependencyNode = map.get(dependency);
+                    /**
+                     * Note: In some cases the node was not added yet.
+                     * So we have to add it as a dependency anyway.
+                     */
+                    if (dependencyNode != null) {
+                        node.add(dependencyNode);
+                    } else {
+                        node.add(TypeScaffoldNode.lazy(dependency));
+                    }
+                }
             });
         });
 
@@ -34,6 +50,7 @@ public class TypesLoaderGraphStrategy implements TypesLoader {
             if (!node.isVisited()) {
                 if (node.getNodes().size() <= 0) {
                     node.setVisited(true);
+                    System.out.println("TypesLoaderGraphStrategy loading " + node.getValue().getName());
                     DynamicTypesHelper.loadInJVM(node.getValue(), classes);
                 } else {
                     load(classes, node.getNodes());
