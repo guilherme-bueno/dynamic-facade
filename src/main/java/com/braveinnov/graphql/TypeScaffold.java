@@ -8,9 +8,16 @@ public class TypeScaffold {
     private final String name;
     private List<FieldScaffold> fields = new ArrayList<>();
     private final List<String> dependencies = new ArrayList<>();
+    private final boolean isEnum;
+
+    public TypeScaffold(String name, boolean isEnum) {
+        this.name = name;
+        this.isEnum = isEnum;
+    }
 
     public TypeScaffold(String name) {
         this.name = name;
+        this.isEnum = false;
     }
 
     public void setFields(List<FieldScaffold> fields) {
@@ -20,6 +27,10 @@ public class TypeScaffold {
                 dependencies.add(field.getTypeName());
             }
         });
+    }
+
+    public boolean isEnum() {
+        return isEnum;
     }
 
     public String getName() {

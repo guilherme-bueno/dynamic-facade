@@ -1,32 +1,28 @@
 package com.braveinnov.learning;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
-import javax.xml.transform.Source;
-
-import org.apache.commons.io.IOUtils;
 import org.junit.Test;
-import org.reflections.ReflectionUtils;
 
-import com.google.gson.Gson;
+import com.braveinnov.bytebuddy.custom.TypeDescrFix;
 
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.field.FieldDescription;
+import net.bytebuddy.description.modifier.ModifierContributor;
+import net.bytebuddy.description.modifier.TypeManifestation;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.dynamic.TargetType;
+import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.DynamicType.Builder;
-import net.bytebuddy.dynamic.DynamicType.Unloaded;
 import net.bytebuddy.dynamic.DynamicType.Builder.MethodDefinition.ReceiverTypeDefinition;
+import net.bytebuddy.dynamic.TargetType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.FieldAccessor;
 import net.bytebuddy.implementation.FixedValue;
+import net.bytebuddy.jar.asm.Opcodes;
 import net.bytebuddy.matcher.ElementMatchers;
 
 public class ByteBuddyLearningTests {
@@ -90,6 +86,59 @@ public class ByteBuddyLearningTests {
             field.setAccessible(true);
             System.out.println(field.getName() + " - " + field.getType());
             field.setAccessible(false);
+        }
+    }
+
+    @Test
+    public void cyclicTypesTest(){
+        try {
+            final ByteBuddy bb = new ByteBuddy();
+            final TypeDescription.Latent typeDescrA = new TypeDescrFix("A", 0, null, null);
+            final TypeDescription.Latent typeDescrB = new TypeDescrFix("B", 0, null, null);
+            final DynamicType.Unloaded<Object> madeA = bb
+                    .subclass(Object.class)
+                    .name("ABCDEF")
+                    .modifiers(ModifierContributor.Resolver.of(Visibility.PUBLIC, TypeManifestation.FINAL).resolve())
+                    .defineField("theB", typeDescrB, Opcodes.ACC_PUBLIC)
+                    .make();
+            final DynamicType.Unloaded<Object> madeB = bb.subclass(Object.class)
+                    .name("B")
+                    .modifiers(ModifierContributor.Resolver.of(Visibility.PUBLIC, TypeManifestation.FINAL).resolve())
+                    .defineField("theA", typeDescrA, Opcodes.ACC_PUBLIC)
+                    .make();
+
+            Class<? extends Object> loadedA = madeA
+                    .include(madeB)
+                    .load(getClass().getClassLoader(), ClassLoadingStrategy.Default.WRAPPER)
+                    .getLoaded();
+            System.out.println(loadedA.newInstance().toString());
+
+
+            Class<? extends Object> loadedB = madeB
+                    // .include(madeA)
+                    .load(getClass().getClassLoader(), ClassLoadingStrategy.Default.WRAPPER)
+                    .getLoaded();
+            System.out.println(loadedB.newInstance().toString());
+
+
+            for (Field field : loadedA.getDeclaredFields()) {
+                System.out.println("A >>> " + field.getName() + " " + field.getType());
+            }
+
+            for (Field field : loadedB.getDeclaredFields()) {
+                System.out.println("B >>> " + field.getName() + " " + field.getType());
+            }
+
+
+            final File folder = new File("/tmp/ByteBuddyHello");
+            madeA.saveIn(folder);
+            madeB.saveIn(folder);
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

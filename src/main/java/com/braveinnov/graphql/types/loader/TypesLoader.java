@@ -7,6 +7,6 @@ import com.braveinnov.graphql.TypeScaffold;
 
 public interface TypesLoader {
     
-    public void loadTypes(Map<String, Class> classes, List<TypeScaffold> types);
+    public void loadTypes(Map<String, Class> classes, List<TypeScaffold> types) throws Exception;
     
 }

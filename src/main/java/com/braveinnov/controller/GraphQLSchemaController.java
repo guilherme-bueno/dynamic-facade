@@ -39,10 +39,17 @@ public class GraphQLSchemaController {
 
             List<ComplexType> requestTypes = new ArrayList<>();
 
+            if (field.getName().equalsIgnoreCase("activate_profile")) {
+                System.out.println(field);
+            }
+
             /**
              * TODO: One Mutation can receive multiple arguments. 
-             * This way, we have to create a class that will wrap all these arguments.
+             * This way, we have to create a class that will wrap all these arguments. Or we can receive all as queryStrings.
+             * 
+             * Example: activate_profile
             **/
+            List<ArgumentDefinition> arguments = new ArrayList<>();
             field.getInputValueDefinitions().forEach(input -> {
                 ComplexType complexType = GraphQLSchemaWrapper.getComplexTypeOf(input);
                 System.out.println(input.getName() + " " + input.getType() + " " + complexType);
@@ -50,11 +57,13 @@ public class GraphQLSchemaController {
                 Class dynamicType = schema.getDynamicType(complexType.getType().getName());
                 System.out.println("dynamicType: " + dynamicType);
                 requestTypes.add(complexType);
+                String description = input.getDescription() != null? input.getDescription().getContent() : "";
+                arguments.add(new ArgumentDefinition(input.getName(), description));
             });
 
             ComplexType complexType = requestTypes.stream().findFirst().orElse(null);
             if (complexType != null){
-                routes.add(new DynamicRestRouteDefinition("mutation/" + field.getName(), schema.getDynamicType(complexType.getType().getName()), dynamicTypeResponse, responseType.isArray()));
+                routes.add(new DynamicRestRouteDefinition("mutation/" + field.getName(), schema.getDynamicType(complexType.getType().getName()), dynamicTypeResponse, responseType.isArray(), arguments));
             }
 
         });
@@ -92,7 +101,8 @@ public class GraphQLSchemaController {
                 Class dynamicType = schema.getDynamicType(complexType.getType().getName());
                 System.out.println("dynamicType: " + dynamicType);
 
-                arguments.add(new ArgumentDefinition(input.getName(), input.getDescription().getContent()));
+                String description = input.getDescription() != null? input.getDescription().getContent() : "";
+                arguments.add(new ArgumentDefinition(input.getName(), description));
             });
 
             if (arguments != null){
@@ -104,6 +114,7 @@ public class GraphQLSchemaController {
                         responseType.isArray(),
                         arguments));
             }
+            //TODO: Should add the else too?
 
         });
 

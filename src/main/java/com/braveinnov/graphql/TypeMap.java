@@ -1,7 +1,9 @@
 package com.braveinnov.graphql;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.function.Function;
 
 import org.joda.time.DateTime;
@@ -33,6 +35,29 @@ public enum TypeMap {
     },DateTime {
         public Function<Map<String, Class>, Class> getType(String name) {
             return (Map<String, Class> map) -> DateTime.class;
+        }
+    },Date {
+        public Function<Map<String, Class>, Class> getType(String name) {
+            return (Map<String, Class> map) -> Date.class;
+        }
+    },LocalDateTime {
+        public Function<Map<String, Class>, Class> getType(String name) {
+            return (Map<String, Class> map) -> LocalDateTime.class;
+        }
+    },
+    TimeZone {
+        public Function<Map<String, Class>, Class> getType(String name) {
+            return (Map<String, Class> map) -> TimeZone.class;
+        }
+    },
+    Metadata {
+        public Function<Map<String, Class>, Class> getType(String name) {
+            return (Map<String, Class> map) -> Map.class;
+        }
+    },
+    JSON {
+        public Function<Map<String, Class>, Class> getType(String name) {
+            return (Map<String, Class> map) -> Map.class;
         }
     },
     UNKNOW {

@@ -1,8 +1,6 @@
 package com.braveinnov.graphql;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -30,7 +28,7 @@ public class GraphQLSchemaWrapperTest {
     private GraphQLSchemaWrapper schema;
 
     @Before
-    public void init() throws FileNotFoundException, IOException {
+    public void init() throws Exception {
         String schemaStr = IOUtils.toString(new FileInputStream("src/test/resources/pistachio.json"), Charset.defaultCharset());
         
 

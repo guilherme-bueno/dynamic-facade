@@ -7,9 +7,9 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import com.braveinnov.controller.DynamicTypesHelper;
 import com.braveinnov.graphql.types.ComplexType;
 import com.braveinnov.graphql.types.loader.TypesLoader;
+import com.braveinnov.helpers.DynamicTypesHelper;
 
 import graphql.language.Definition;
 import graphql.language.Document;
@@ -43,7 +43,7 @@ public class GraphQLSchemaWrapper {
         return item -> item.getName().equalsIgnoreCase(name);
     }
 
-    public GraphQLSchemaWrapper(Document document, TypesLoader loader) {
+    public GraphQLSchemaWrapper(Document document, TypesLoader loader) throws Exception {
         this.document = document;
         this.loader = loader;
         this.definitions = this.document.getDefinitions();
@@ -77,7 +77,7 @@ public class GraphQLSchemaWrapper {
         generateDynamicTypes();
     }
 
-    private void generateDynamicTypes() {
+    private void generateDynamicTypes() throws Exception {
 
         List<TypeScaffold> types = new ArrayList<>();
         
@@ -143,10 +143,16 @@ public class GraphQLSchemaWrapper {
         });
 
         enumTypeDefinitions.forEach(type -> {
-            type.getName();
+            final String name = type.getName();
+            final List<FieldScaffold> fields = new ArrayList<>();
+            final TypeScaffold scaffold = new TypeScaffold(name, true);
+
             type.getEnumValueDefinitions().forEach(enumDef -> {
                 System.out.println(enumDef);
+                fields.add(new FieldScaffold(enumDef.getName(), null, null));
             });
+            scaffold.setFields(fields);
+            types.add(scaffold);
         });
         
         types.forEach(type -> {
@@ -155,12 +161,7 @@ public class GraphQLSchemaWrapper {
 
         this.loader.loadTypes(this.dynamicTypes, types);
 
-        loadDynamicTypesInJVM(types);
         System.out.println(dynamicTypes.keySet());
-    }
-
-    private void loadDynamicTypesInJVM(List<TypeScaffold> types) {
-        DynamicTypesHelper.loadInJVM(types, this.dynamicTypes);
     }
 
     public Class getGeneratedType(String name){ 
@@ -182,14 +183,21 @@ public class GraphQLSchemaWrapper {
     }
 
     public static ComplexType getComplexTypeOf(InputValueDefinition input){
-        Type type = input.getType();
-        if (type instanceof NonNullType) {
-            return new ComplexType((TypeName)((NonNullType) type).getType());
-        } else if (type instanceof ListType) {
-            System.out.println("List Type: " + type);
-            return getComplexTypeOf(((ListType) type).getType());
-        } else {
-            return new ComplexType((TypeName) type);
+        try {    
+            Type type = input.getType();
+            if (type instanceof NonNullType) {
+                NonNullType nnType = (NonNullType) type;
+                ComplexType complexType = getComplexTypeOf(nnType.getType());
+                return new ComplexType(complexType.getType());
+            } else if (type instanceof ListType) {
+                System.out.println("List Type: " + type);
+                return getComplexTypeOf(((ListType) type).getType());
+            } else {
+                return new ComplexType((TypeName) type);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
     }
 

@@ -25,7 +25,7 @@ import graphql.introspection.IntrospectionResultToSchema;
 public class GraphQLSchemaWrapperFactory {
 
     //@Value("classpath:pistachio.json")
-    @Value("classpath:schema.json")
+    @Value("classpath:pistachio.json")
     private Resource resource;
 
     @Autowired
@@ -35,7 +35,7 @@ public class GraphQLSchemaWrapperFactory {
     private TypesLoader loader;
 
     @Bean
-    public GraphQLSchemaWrapper schemaWrapper() throws IOException {
+    public GraphQLSchemaWrapper schemaWrapper() throws Exception {
         String schema = IOUtils.toString(resource.getInputStream());
         IntrospectionResultToSchema parser = new IntrospectionResultToSchema();
         Map<String, Object> map = new Gson().fromJson(schema, Map.class);

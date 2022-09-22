@@ -14,7 +14,7 @@ import com.braveinnov.graphql.TypeScaffold;
 public class TypesLoaderGraphStrategyTest {
 
     @Test
-    public void test() { 
+    public void test() throws Exception { 
         TypesLoaderGraphStrategy strategy = new TypesLoaderGraphStrategy();
         Map<String,Class> classes = new HashMap<>();
 

@@ -1,20 +1,11 @@
 package com.braveinnov;
 
-import java.util.Map;
-
 import org.apache.camel.CamelContext;
-import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.RouteBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
-
-import com.braveinnov.models.MyGraphQLSchema;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import graphql.schema.GraphQLSchema;
 
 @Configuration
 public class GraphQLDynamicRoutes extends RouteBuilder{
