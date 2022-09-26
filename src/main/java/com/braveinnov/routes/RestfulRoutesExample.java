@@ -18,7 +18,9 @@ public class RestfulRoutesExample extends RouteBuilder{
 
   @Override
   public void configure() throws Exception {
-    rest("/ws/example")
+    rest("/example")
+      .get("proxy")
+        .to("http://localhost:3000/hello?bridgeEndpoint=true")
       .get("v1/resource/{id}")
         .description("Example of Restful endpoint using a path param")
         .produces("application/json")

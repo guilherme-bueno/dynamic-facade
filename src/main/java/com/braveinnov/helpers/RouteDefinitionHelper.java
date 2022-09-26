@@ -3,12 +3,14 @@ package com.braveinnov.helpers;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.context.annotation.Configuration;
+
 public class RouteDefinitionHelper {
 
     private static List<String> enabledRoutes = new ArrayList<>();
 
     static {
-        // enabledRoutes.add("mutation/project_create");
+        enabledRoutes.add("mutation/project_create");
     }
 
     public static boolean isEnabled(String path) { 

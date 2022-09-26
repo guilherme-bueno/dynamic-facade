@@ -24,7 +24,6 @@ import graphql.introspection.IntrospectionResultToSchema;
 @Configuration
 public class GraphQLSchemaWrapperFactory {
 
-    //@Value("classpath:pistachio.json")
     @Value("classpath:pistachio.json")
     private Resource resource;
 
@@ -45,14 +44,4 @@ public class GraphQLSchemaWrapperFactory {
         Map<String, Object> sc = (Map<String, Object>) data.get("data");
         return new GraphQLSchemaWrapper(parser.createSchemaDefinition(sc), loader);
     }
-
-
-    @Bean
-    ServletRegistrationBean servletRegistrationBean() {
-        ServletRegistrationBean servlet = new ServletRegistrationBean
-        (new CamelHttpTransportServlet(), "/ws/*");
-        servlet.setName("CamelServlet");
-        return servlet;
-    }
-    
 }
