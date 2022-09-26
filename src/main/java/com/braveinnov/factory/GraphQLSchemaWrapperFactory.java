@@ -24,7 +24,7 @@ import graphql.introspection.IntrospectionResultToSchema;
 @Configuration
 public class GraphQLSchemaWrapperFactory {
 
-    @Value("classpath:pistachio.json")
+    @Value("classpath:schema.json")
     private Resource resource;
 
     @Autowired

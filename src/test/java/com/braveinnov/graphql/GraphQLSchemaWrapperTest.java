@@ -29,7 +29,7 @@ public class GraphQLSchemaWrapperTest {
 
     @Before
     public void init() throws Exception {
-        String schemaStr = IOUtils.toString(new FileInputStream("src/test/resources/pistachio.json"), Charset.defaultCharset());
+        String schemaStr = IOUtils.toString(new FileInputStream("src/test/resources/schema.json"), Charset.defaultCharset());
         
 
         IntrospectionResultToSchema parser = new IntrospectionResultToSchema();
